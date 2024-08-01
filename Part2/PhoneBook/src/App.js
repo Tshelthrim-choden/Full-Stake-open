@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import Filter from './Component/Filter';
 import PersonForm from './Component/PersonForm';
 import Persons from './Component/Persons';
+import server from './Server/server';
 
 const App = () => {
   const [persons, setPersons] = useState([]);
@@ -11,11 +11,10 @@ const App = () => {
   const [searchName, setSearchName] = useState('');
 
   useEffect(() => {
-    axios
-      .get('http://localhost:3001/persons')
-      .then(response => {
-        setPersons(response.data);
-      })
+    server.getAll()
+    .then(response => {
+      setPersons(response.data);
+    })
       .catch(error => {
         console.error('Error fetching data:', error);
       });
@@ -40,11 +39,31 @@ const App = () => {
     const sameNumber = persons.some(person => person.number === newNumber);
 
     if (sameName) {
-      alert(`${newName} is already added to phonebook`);
+      window.confirm(`${newName} is already added to phonebook.Replace the old number with a new one?`);
+      const updatedPerson = { ...sameName, number: newNumber };
+      server.update(sameName.id, updatedPerson)
+        .then(response => {
+          setPersons(persons.map(person =>
+            person.id !== sameName.id ? person : response.data
+          ));
+          setNewName('');
+          setNewNumber('');
+        })
+        .catch(error => {
+          console.error('Error updating person:', error);
+        });
     } else if (sameNumber) {
       alert(`Number ${newNumber} is already added to phonebook`);
     } else {
-      setPersons(persons.concat({ name: newName, number: newNumber, id: persons.length + 1 }));
+      const newPerson = { name: newName, number: newNumber, id: (persons.length + 1).toString()};
+      server.create(newPerson).then(response =>{
+        setPersons(persons.concat(response.data));
+          setNewName('');
+          setNewNumber('');
+        })
+        .catch(error => {
+          console.error('Error adding person:', error);
+        });
     }
 
     setNewName('');
@@ -54,6 +73,20 @@ const App = () => {
   const filteredPersons =persons.filter(person =>
         person.name.toLowerCase().startsWith(searchName.toLowerCase())
       );
+
+      const handleDelete = (id) => {
+        const person = persons.find(p => p.id === id);
+        if (window.confirm(`Delete ${person.name}?`)) {
+          server.remove(id)
+            .then(() => {
+              setPersons(persons.filter(p => p.id !== id));
+            })
+            .catch(error => {
+              console.error('Error deleting person:', error);
+            });
+        }
+      };
+
   return (
     <div>
       <h2>Phonebook</h2>
@@ -67,7 +100,7 @@ const App = () => {
         handleSubmit={handleSubmit} 
       />
       <h2>Numbers</h2>
-     <Persons filteredPersons={filteredPersons}/>
+     <Persons filteredPersons={filteredPersons} handleDelete={handleDelete}/>
     </div>
   );
 };
