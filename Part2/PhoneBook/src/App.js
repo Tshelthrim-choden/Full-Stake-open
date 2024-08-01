@@ -35,7 +35,7 @@ const App = () => {
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    const sameName = persons.some(person => person.name === newName);
+    const sameName = persons.find(person => person.name === newName);
     const sameNumber = persons.some(person => person.number === newNumber);
 
     if (sameName) {
