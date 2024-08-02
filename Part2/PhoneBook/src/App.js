@@ -3,12 +3,14 @@ import Filter from './Component/Filter';
 import PersonForm from './Component/PersonForm';
 import Persons from './Component/Persons';
 import server from './Server/server';
+import Notification from './Component/Error';
 
 const App = () => {
   const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState('');
   const [newNumber, setNewNumber] = useState('');
   const [searchName, setSearchName] = useState('');
+  const [notification, setNotification] =useState(null);
 
   useEffect(() => {
     server.getAll()
@@ -48,6 +50,8 @@ const App = () => {
           ));
           setNewName('');
           setNewNumber('');
+          setNotification(`Updated ${newName}'s number`);
+          setTimeout(() => setNotification(null), 3000);
         })
         .catch(error => {
           console.error('Error updating person:', error);
@@ -60,6 +64,8 @@ const App = () => {
         setPersons(persons.concat(response.data));
           setNewName('');
           setNewNumber('');
+          setNotification(`Added ${newName}`);
+          setTimeout(() => setNotification(null), 3000); 
         })
         .catch(error => {
           console.error('Error adding person:', error);
@@ -90,6 +96,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={notification} />
       <Filter searchName={searchName} handleSearchName={handleSearchName}/>
       <h2>Add a new</h2>
       <PersonForm 
